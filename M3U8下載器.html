@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>M3U8下載器</title>
+<style>
+:root{color-scheme:dark;font:15px/1.6 system-ui,sans-serif;background:#10131a;color:#e9edf6}*{box-sizing:border-box}body{margin:0}main{max-width:1240px;margin:auto;padding:36px 24px 100px}h1{font-size:30px;margin:4px 0}h2{font-size:19px}p{color:#aab4c8}label{cursor:pointer}button,input,select{font:inherit}button{border:1px solid #354159;border-radius:9px;padding:9px 16px;background:#232c3e;color:#e9edf6;cursor:pointer}button:hover{background:#34435f}button:disabled{opacity:.45;cursor:default}.primary{background:#a9edcb;color:#102a22;border-color:#a9edcb;font-weight:700}.panel{background:#191e29;border:1px solid #30394c;border-radius:16px;padding:22px;margin-top:24px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}input[type=url],input[type=text]{background:#10131a;border:1px solid #3c475c;color:white;border-radius:8px;padding:11px;min-width:0;flex:1}input[type=number]{width:78px;background:#10131a;color:white;border:1px solid #3c475c;padding:7px;border-radius:6px}select{max-width:100%;background:#232c3e;color:white;padding:9px;border-radius:8px}input[type=checkbox]{accent-color:#a9edcb;width:19px;height:19px}.eyebrow{color:#a9edcb;letter-spacing:.16em;font-size:12px}.hint{font-size:13px;color:#aab4c8}.status{white-space:pre-wrap;color:#c5d5ef;margin-top:15px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-top:20px}.card{border:1px solid #4d8b73;background:#192e29;border-radius:12px;overflow:hidden}.card.excluded{border-color:#393f4b;background:#1b1e26}.card.excluded img{opacity:.4}.thumb{position:relative;aspect-ratio:16/9;background:#101722;display:flex;align-items:center;justify-content:center;color:#9aa9c3}.thumb img{width:100%;height:100%;object-fit:cover;position:absolute}.thumb span{padding:10px;text-align:center;font-size:12px}.info{padding:12px}.info label{display:flex;align-items:center;gap:8px}.meta{color:#abb6c9;font-size:12px;margin:5px 0 10px}.info button{padding:5px 12px;font-size:13px}.toolbar{position:sticky;top:0;z-index:2;background:#191e29f5;border-bottom:1px solid #354159;padding:14px 0}.count{color:#a9edcb;font-weight:650}dialog{background:#191e29;color:#edf2fa;border:1px solid #43516a;border-radius:16px;width:min(850px,94vw)}dialog::backdrop{background:#000b}video{width:100%;background:black;max-height:65vh}.footer{position:fixed;bottom:0;left:0;right:0;background:#171c27f5;border-top:1px solid #354159;padding:12px 24px;z-index:3}.footer .row{max-width:1192px;margin:auto}progress{width:100%;accent-color:#a9edcb}a{color:#a9edcb}[hidden]{display:none!important}@media(max-width:550px){main{padding:20px 14px 140px}.panel{padding:15px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.info{padding:9px}h1{font-size:24px}.footer{padding:10px 14px}}
+</style>
+<main>
+<h1>M3U8下載器</h1><p>預覽並選取片段，下載 TS 或匯出 MP4。</p>
+<section class="panel"><label for="url">M3U8 影片網址</label><div class="row"><input id="url" type="url" placeholder="https://example.com/video.m3u8"><button id="load" class="primary">讀取片段</button><button id="demo">試用示範</button><button id="importList">匯入清單</button><input id="importFile" type="file" accept=".json,application/json" hidden></div>
+<div id="qualityRow" class="row" hidden><label for="quality">選擇畫質</label><select id="quality"></select><button id="choose">載入此畫質</button></div>
+<div id="status" class="status" role="status">貼上影片網址即可開始。預設保留所有片段。</div><progress id="progress" hidden value="0" max="1"></progress>
+<details class="hint"><summary>使用說明與支援範圍</summary><h2>取得 M3U8 網址</h2>
+<ol>
+<li>使用 Chrome 開啟影片網頁，按下 <kbd>F12</kbd> 開啟開發人員工具。</li>
+<li>切換至 <strong>Network（網路）</strong> 分頁，在 <strong>Filter（篩選）</strong> 欄位輸入 <code>m3u8</code>。</li>
+<li>按下 <kbd>F5</kbd> 重新整理網頁，並播放影片。若影片使用 HLS，通常可以在請求清單中找到 M3U8 網址。</li>
+<li>在對應的請求上按滑鼠右鍵，選擇 <strong>Copy → Copy link address（複製連結網址）</strong>。</li>
+<li>將網址貼到本工具的「M3U8 影片網址」，按下「讀取片段」。</li>
+<li>預覽並勾選要保留的片段，再按「匯出 MP4」。支援的 H.264／AAC TS 來源會直接重新封裝，不重新編碼，因此不會因轉檔而損失畫質。</li>
+</ol>
+<p>若沒有出現 M3U8 請求，影片可能未使用 HLS，或請求被其他篩選條件隱藏。即使取得網址，來源的跨域限制、登入驗證、DRM 或連結過期仍可能影響讀取與下載。</p><h2>支援範圍</h2>這是獨立的瀏覽器工具。影片來源必須允許跨域存取（CORS）；需登入、過期連結或 DRM 的來源無法直接使用。預覽使用 HLS.js，需要網路連線。支援一般 TS、AES-128 及位元組範圍；fMP4 可預覽，MP4 匯出支援 H.264／AAC 的 TS 來源，直接封裝而不重新壓縮；fMP4 來源目前僅支援預覽。片段間編碼或解析度改變時會停止匯出。獨立音軌不會自動合併。TS 接合後可能因時間戳跳躍或來源編碼不同而需要播放器重新整理時間軸。縮圖依畫面擷取，沒有自動判斷廣告；請自行確認。大型影片下載需要足夠記憶體，關閉頁面會清除選取，請先匯出選取名單（JSON）；可在空白頁面匯入還原。名單含來源網址與片段資料，不包含影片檔案，請妥善保管。</details></section>
+<section id="editor" class="panel" hidden><div class="toolbar"><div class="row"><button id="all">全選</button><button id="none">全部取消</button><button id="invert">反選</button><span class="count" id="count"></span></div><div class="row" style="margin-top:10px"><label>片號 <input id="from" type="number" min="1" value="1"> ～ <input id="to" type="number" min="1" value="1"></label><button id="keepRange">保留此區間</button><button id="dropRange">取消此區間</button><label><input id="onlyKept" type="checkbox"> 只看保留</label><label><input id="onlyDropped" type="checkbox"> 查看未選取</label></div><div class="row" style="margin-top:10px"><button id="thumbs">重新載入縮圖</button><span class="hint">所有片段在同一頁；往下捲動時逐步載入縮圖。失敗仍可嘗試預覽。</span></div></div>
+<div id="grid" class="grid"></div><div class="row" style="margin-top:20px" hidden><button id="prev">上一頁</button><span id="pageInfo"></span><button id="next">下一頁</button></div></section>
+</main><div class="footer" id="footer" hidden><div class="row"><input id="filename" type="text" value="我的影片" aria-label="儲存檔名"><button id="playlist">匯出選取名單</button><button id="download">下載 TS</button><button id="mp4" class="primary">匯出 MP4</button><button id="cancel" hidden>停止下載</button></div></div>
+<dialog id="preview"><div class="row" style="justify-content:space-between"><strong id="previewTitle"></strong><button id="close">關閉</button></div><video id="player" controls playsinline></video><p id="previewStatus" role="status"></p><div class="row"><button id="previewPrev">上一片</button><button id="previewToggle">取消保留</button><button id="previewNext">下一片</button></div></dialog>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.13/dist/hls.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mux.js@6.3.0/dist/mux.min.js"></script>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+let segments=[],selected=new Set(),page=0,source='',isDemo=false,thumbRun=0,busy=false,controller=null,previewIndex=0,previewCleanup=null,autoObserver=null;
+const thumbnails=new Map(),keyCache=new Map(),PAGE_SIZE=36;
+function status(s){$('status').textContent=s}
+function time(s){s=Math.floor(s);return [Math.floor(s/3600),Math.floor(s/60)%60,s%60].map(n=>String(n).padStart(2,'0')).join(':')}
+function attrs(s){const out={};for(const m of s.matchAll(/([\w-]+)=("[^"]*"|[^,]*)/g))out[m[1]]=m[2].replace(/^"|"$/g,'');return out}
+function safeUrl(uri,base){const u=new URL(uri,base);if(!['http:','https:'].includes(u.protocol))throw Error('僅支援 HTTP / HTTPS 來源');return u.href}
+function parse(text,base){
+ if(!text.trim().startsWith('#EXTM3U'))throw Error('回應不是有效 M3U8 播放清單');
+ const lines=text.replace(/\r/g,'').split('\n').map(s=>s.trim());let variants=[],out=[],pending=null,duration=0,key=null,map=null,range=null,lastEnd=0,lastUrl='',seq=0,total=0,disc=false;
+ for(const line of lines){
+  if(line.startsWith('#EXT-X-STREAM-INF:'))pending=attrs(line.slice(18));
+  else if(line.startsWith('#EXT-X-MEDIA:')&&attrs(line.slice(13)).TYPE==='AUDIO'&&attrs(line.slice(13)).URI)variants.externalAudio=true;
+  else if(line.startsWith('#EXT-X-MEDIA-SEQUENCE:'))seq=Number(line.split(':')[1]);
+  else if(line.startsWith('#EXTINF:'))duration=Number(line.slice(8).split(',')[0]);
+  else if(line.startsWith('#EXT-X-KEY:')){const a=attrs(line.slice(11));if(a.METHOD==='NONE')key=null;else{if(a.METHOD!=='AES-128'||(a.KEYFORMAT&&a.KEYFORMAT!=='identity'))throw Error('此來源使用不支援的加密方式或 DRM');key={...a,URI:safeUrl(a.URI,base)}}}
+  else if(line.startsWith('#EXT-X-MAP:')){const a=attrs(line.slice(11));map={...a,URI:safeUrl(a.URI,base)}}
+  else if(line.startsWith('#EXT-X-BYTERANGE:'))range=line.slice(17);
+  else if(line==='#EXT-X-DISCONTINUITY')disc=true;
+  else if(line&&!line.startsWith('#')){
+   const url=safeUrl(line,base);if(pending){variants.push({url,label:(pending.RESOLUTION||'預設')+' · '+Math.round(Number(pending.BANDWIDTH||0)/1000)+' kbps',audio:pending.AUDIO});pending=null;continue}
+   let byteRange=null;if(range){const [len,off]=range.split('@').map(Number);if(off===undefined&&url!==lastUrl)throw Error('無法判讀隱含位元組範圍');const start=off===undefined?lastEnd:off;byteRange={start,length:len};lastEnd=start+len;lastUrl=url}
+   if(!Number.isFinite(duration)||duration<=0)throw Error('片段時長無效');out.push({url,duration,start:total,seq:seq+out.length,key:key?{...key}:null,map:map?{...map}:null,range:byteRange,disc});total+=duration;duration=0;range=null;disc=false;
+  }
+ }
+ return {variants,segments:out,live:!lines.includes('#EXT-X-ENDLIST')};
+}
+async function request(url,options={}){const c=new AbortController(),timer=setTimeout(()=>c.abort(),30000);const outer=options.signal;const abort=()=>c.abort();if(outer?.aborted)c.abort();outer?.addEventListener('abort',abort,{once:true});try{const r=await fetch(url,{...options,signal:c.signal});if(!r.ok)throw Error('HTTP '+r.status);return r}finally{clearTimeout(timer);outer?.removeEventListener('abort',abort)}}
+async function readManifest(url,depth=0){if(depth>5)throw Error('播放清單層數過多');const r=await request(url);const p=parse(await r.text(),r.url||url);return p}
+function reset(){thumbRun++;autoObserver?.disconnect();previewCleanup?.();$('preview').close();segments=[];selected.clear();thumbnails.clear();keyCache.clear();$('editor').hidden=true;$('footer').hidden=true;$('qualityRow').hidden=true;page=0}
+function install(p){segments=p.segments;if(!segments.length)throw Error('找不到可用的影片片段');selected=new Set(segments.map((_,i)=>i));$('to').value=segments.length;$('from').max=$('to').max=segments.length;$('editor').hidden=false;$('footer').hidden=false;render();status((isDemo?'示範選取模式：卡片為模擬畫面，請載入真實網址以預覽與下載。':`已讀取 ${segments.length} 個片段。縮圖開始載入，可取消廣告片段。`)+(p.live?'\n這是直播清單，只載入當下快照，不會持續追蹤新片段。':''));}
+async function load(url){if(busy)return;busy=true;$('load').disabled=$('choose').disabled=true;try{reset();isDemo=false;source=url;status('正在讀取播放清單…');const p=await readManifest(url);if(p.variants.length){$('quality').replaceChildren(...p.variants.map(v=>{const o=document.createElement('option');o.value=v.url;o.textContent=v.label+(v.audio?'（可能有獨立音軌）':'');return o}));$('qualityRow').hidden=false;status('請選擇畫質，再按「載入此畫質」。獨立音軌不會自動合併。')}else install(p)}catch(e){status('讀取失敗：'+e.message+'\n請確認連結仍有效，且來源允許跨域存取。')}finally{busy=false;$('load').disabled=$('choose').disabled=false;updateCount()}}
+function visible(){return segments.map((s,i)=>i).filter(i=>(!$('onlyKept').checked||selected.has(i))&&(!$('onlyDropped').checked||!selected.has(i)))}
+function updateCount(){const kept=[...selected].reduce((n,i)=>n+segments[i].duration,0);$('count').textContent=`保留 ${selected.size} / ${segments.length} 段 · ${time(kept)} · 排除 ${segments.length-selected.size} 段`;$('mp4').disabled=$('download').disabled=!selected.size||isDemo||busy;$('playlist').disabled=!segments.length||busy;}
+function render(){
+ autoObserver?.disconnect();const list=visible(),pages=1;page=0;$('grid').replaceChildren();
+ for(const i of list){const s=segments[i],card=document.createElement('article');card.className='card'+(selected.has(i)?'':' excluded');card.dataset.index=i;const thumb=document.createElement('div');thumb.className='thumb';thumb.innerHTML='<span>等待縮圖</span>';const info=document.createElement('div');info.className='info';const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=selected.has(i);check.addEventListener('change',()=>{check.checked?selected.add(i):selected.delete(i);card.classList.toggle('excluded',!check.checked);updateCount();if($('onlyKept').checked||$('onlyDropped').checked)render()});label.append(check,document.createTextNode('片段 '+(i+1)));const meta=document.createElement('div');meta.className='meta';meta.textContent=`${time(s.start)} – ${time(s.start+s.duration)} · ${s.duration.toFixed(1)} 秒`;const play=document.createElement('button');play.textContent='▶ 預覽';play.onclick=()=>preview(i);info.append(label,meta,play);card.append(thumb,info);$('grid').append(card);showThumb(i,thumb)}
+ $('pageInfo').textContent=`${page+1} / ${pages} 頁`;$('prev').disabled=page===0;$('next').disabled=page>=pages-1;updateCount();
+ if(!isDemo&&!busy)generateThumbnails();
+}
+function showThumb(i,node){if(thumbnails.has(i)){node.replaceChildren();const im=document.createElement('img');im.src=thumbnails.get(i);im.alt='片段 '+(i+1)+' 的縮圖';node.append(im)}else if(isDemo){node.style.background=`hsl(${i>=8&&i<=10?15:150+i*3} 25% 23%)`;node.firstChild.textContent=i>=8&&i<=10?'示範：廣告片段':'示範：影片內容'}}
+function ivFor(s){if(s.key?.IV)return s.key.IV;return '0x'+BigInt(s.seq).toString(16).padStart(32,'0')}
+function playlist(items){const lines=['#EXTM3U','#EXT-X-VERSION:7','#EXT-X-TARGETDURATION:'+Math.ceil(Math.max(...items.map(s=>s.duration))),'#EXT-X-MEDIA-SEQUENCE:0','#EXT-X-PLAYLIST-TYPE:VOD'];let prev=null;for(const s of items){if(prev&&(s.disc||s.seq!==prev.seq+1||s.map?.URI!==prev.map?.URI))lines.push('#EXT-X-DISCONTINUITY');if(s.key)lines.push(`#EXT-X-KEY:METHOD=AES-128,URI="${s.key.URI}",IV=${ivFor(s)}`);else lines.push('#EXT-X-KEY:METHOD=NONE');if(s.map)lines.push(`#EXT-X-MAP:URI="${s.map.URI}"`+(s.map.BYTERANGE?`,BYTERANGE="${s.map.BYTERANGE}"`:''));lines.push('#EXTINF:'+s.duration+',');if(s.range)lines.push(`#EXT-X-BYTERANGE:${s.range.length}@${s.range.start}`);lines.push(s.url);prev=s}lines.push('#EXT-X-ENDLIST');return lines.join('\n')}
+function mount(video,s,onError){const blob=URL.createObjectURL(new Blob([playlist([s])],{type:'application/vnd.apple.mpegurl'}));let hls=null;if(window.Hls&&Hls.isSupported()){hls=new Hls({maxBufferLength:15,enableWorker:true});hls.on(Hls.Events.ERROR,(_,d)=>{if(d.fatal)onError(d.details||'片段無法解碼')});hls.loadSource(blob);hls.attachMedia(video)}else if(video.canPlayType('application/vnd.apple.mpegurl'))video.src=blob;else{URL.revokeObjectURL(blob);throw Error('預覽元件未載入，請確認網路或使用支援 HLS 的瀏覽器')}return ()=>{hls?.destroy();video.pause();video.removeAttribute('src');video.load();URL.revokeObjectURL(blob)}}
+function preview(i){if(isDemo){status('示範只用來操作選取；請載入自己的 M3U8 網址以觀看真實片段。');return}previewCleanup?.();previewIndex=i;$('previewTitle').textContent=`片段 ${i+1} · ${time(segments[i].start)} · ${segments[i].duration.toFixed(1)} 秒`;$('previewToggle').textContent=selected.has(i)?'取消保留此片段':'保留此片段';$('previewPrev').disabled=i===0;$('previewNext').disabled=i===segments.length-1;$('previewStatus').textContent='正在載入此片段…';if(!$('preview').open)$('preview').showModal();try{previewCleanup=mount($('player'),segments[i],m=>$('previewStatus').textContent='播放失敗：'+m+'。可能受跨域、來源編碼或片段缺少獨立關鍵影格影響。');$('player').onloadeddata=()=>{$('previewStatus').textContent='這裡只播放此片段。';$('player').play().catch(()=>{})}}catch(e){$('previewStatus').textContent=e.message}}
+async function thumbnail(i,token){const video=document.createElement('video');video.muted=true;video.playsInline=true;video.crossOrigin='anonymous';video.style.cssText='position:fixed;left:-9999px;width:240px;height:135px';document.body.append(video);let cleanup;try{const data=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('縮圖逾時')),18000);let done=false;const finish=()=>{if(done)return;done=true;try{const canvas=document.createElement('canvas');canvas.width=320;canvas.height=180;canvas.getContext('2d').drawImage(video,0,0,320,180);clearTimeout(timer);resolve(canvas.toDataURL('image/jpeg',.7))}catch(e){clearTimeout(timer);reject(e)}};video.onloadeddata=finish;video.onerror=()=>{clearTimeout(timer);reject(Error('無法解碼'))};try{cleanup=mount(video,segments[i],m=>{clearTimeout(timer);reject(Error(m))});video.play().catch(()=>{})}catch(e){clearTimeout(timer);reject(e)}});if(token===thumbRun)thumbnails.set(i,data)}finally{cleanup?.();video.remove()}}
+function generateThumbnails(){
+ if(isDemo||busy)return;
+ autoObserver?.disconnect();const token=++thumbRun,queue=[];let active=0;
+ $('thumbs').disabled=false;
+ const pump=()=>{
+ while(active<2&&queue.length&&token===thumbRun){
+ const card=queue.shift(),i=Number(card.dataset.index),node=card.querySelector('.thumb');
+ if(thumbnails.has(i)){showThumb(i,node);continue}
+ active++;node.textContent='縮圖載入中…';
+ thumbnail(i,token).then(()=>{if(token===thumbRun)showThumb(i,node)}).catch(()=>{if(token===thumbRun)node.textContent='縮圖無法產生 · 可嘗試預覽'}).finally(()=>{active--;pump()});
+ }
+ };
+ const cards=[...$('grid').children];
+ if(typeof IntersectionObserver==='undefined'){for(const card of cards)queue.push(card);pump();return}
+ autoObserver=new IntersectionObserver(entries=>{
+ for(const entry of entries){if(!entry.isIntersecting)continue;autoObserver.unobserve(entry.target);queue.push(entry.target)}pump();
+ },{rootMargin:'600px 0px'});
+ for(const card of cards){const i=Number(card.dataset.index);if(!thumbnails.has(i))autoObserver.observe(card)}
+}
+function save(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),60000)}
+function filename(){return ($('filename').value.trim()||'我的影片').replace(/[<>:"/\\|?*\x00-\x1f]/g,'_')}
+async function bytes(s,signal){const headers={};if(s.range)headers.Range=`bytes=${s.range.start}-${s.range.start+s.range.length-1}`;const r=await request(s.url,{headers,signal});let b=await r.arrayBuffer();if(s.range){if(r.status===206){if(b.byteLength!==s.range.length)throw Error('位元組範圍長度不符')}else{if(b.byteLength<s.range.start+s.range.length)throw Error('伺服器未正確回傳位元組範圍');b=b.slice(s.range.start,s.range.start+s.range.length)}}if(s.key){if(!crypto.subtle)throw Error('此瀏覽器環境無法使用 AES 解密，請改用 localhost 或 HTTPS');let k=keyCache.get(s.key.URI);if(!k){const raw=await(await request(s.key.URI,{signal})).arrayBuffer();k=await crypto.subtle.importKey('raw',raw,'AES-CBC',false,['decrypt']);keyCache.set(s.key.URI,k)}const hex=ivFor(s).replace(/^0x/i,'').padStart(32,'0');if(!/^[0-9a-f]{32}$/i.test(hex))throw Error('AES IV 無效');b=await crypto.subtle.decrypt({name:'AES-CBC',iv:new Uint8Array(hex.match(/../g).map(h=>parseInt(h,16)))},k,b)}return b}
+
+function transmuxMp4(buffer, baseTime) {
+ if(!window.muxjs?.mp4?.Transmuxer)throw Error('MP4 元件未載入，請確認網路後重新開啟頁面');
+ const transmuxer=new muxjs.mp4.Transmuxer({baseMediaDecodeTime:Math.round(baseTime),keepOriginalTimestamps:false,remux:true});
+ const output=[];let failure=null,endTime=null;
+ transmuxer.on('data',s=>output.push(s));transmuxer.on('error',e=>failure=e);
+ transmuxer.on('videoSegmentTimingInfo',t=>{endTime=t.end.dts});
+ try{transmuxer.push(new Uint8Array(buffer));transmuxer.flush();if(failure)throw failure;
+ if(output.length!==1||!output[0].data?.byteLength||!output[0].initSegment?.byteLength)throw Error('片段無法轉成 MP4；請確認來源為 H.264／AAC，且片段有完整關鍵影格');
+ return {init:output[0].initSegment,data:output[0].data,endTime};
+ }finally{transmuxer.dispose?.()}
+}
+function sameBytes(a,b){return a.length===b.length&&a.every((value,i)=>value===b[i])}
+function lockExport(locked){
+ for(const id of ['load','choose','demo','importList','all','none','invert','keepRange','dropRange','thumbs','prev','next','onlyKept','onlyDropped','previewToggle'])$(id).disabled=locked;
+ for(const input of $('grid').querySelectorAll('input'))input.disabled=locked;
+ $('cancel').hidden=!locked;$('progress').hidden=!locked;updateCount();
+}
+async function download(format='ts'){
+ if(busy||!selected.size||isDemo)return;
+ const items=segments.filter((_,i)=>selected.has(i)),excluded=segments.length-items.length,outputName=filename();
+ if(items.some(s=>s.map||/\.(m4s|mp4)(\?|$)/i.test(s.url))){status('這個來源是 fMP4，目前僅支援預覽與選取進度備份。MP4 匯出支援 TS 來源。');return}
+ if(format==='mp4'&&!window.muxjs?.mp4?.Transmuxer){status('MP4 元件未載入，請確認網路後重新開啟頁面。');return}
+ busy=true;thumbRun++;controller=new AbortController();lockExport(true);$('progress').value=0;
+ const buffers=[];let init=null,baseTime=0;
+ try{
+ for(let i=0;i<items.length;i++){
+ status((format==='mp4'?'下載並封裝 MP4':'下載保留片段')+' '+(i+1)+' / '+items.length+'…');
+ let b;for(let attempt=0;attempt<3;attempt++){try{b=await bytes(items[i],controller.signal);break}catch(e){if(controller.signal.aborted||attempt===2)throw e}}
+ if(controller.signal.aborted)throw Error('已停止');
+ if(format==='mp4'){
+ const part=transmuxMp4(b,baseTime);
+ if(!init){init=part.init;buffers.push(init)}else if(!sameBytes(init,part.init))throw Error('保留片段的影像／音訊規格不同，無法直接合併 MP4。請改下載 TS，或分別匯出相同規格的片段');
+ buffers.push(part.data);baseTime=Number.isFinite(part.endTime)&&part.endTime>baseTime?part.endTime:baseTime+Math.round(items[i].duration*90000);
+ }else buffers.push(b);
+ $('progress').value=(i+1)/items.length;await new Promise(resolve=>setTimeout(resolve,0));
+ }
+ if(controller.signal.aborted)throw Error('已停止');
+ save(new Blob(buffers,{type:format==='mp4'?'video/mp4':'video/mp2t'}),outputName+'.'+format);
+ status('已交給瀏覽器儲存 '+format.toUpperCase()+'：保留 '+items.length+' 個片段，排除 '+excluded+' 個片段。');
+ }catch(e){status(controller.signal.aborted?'已停止下載，沒有輸出不完整影片。':'匯出失敗：'+e.message+'。未輸出不完整影片。')}
+ finally{buffers.length=0;busy=false;controller=null;lockExport(false);const pages=Math.max(1,Math.ceil(visible().length/PAGE_SIZE));$('prev').disabled=page===0;$('next').disabled=page>=pages-1}
+}
+$('load').onclick=()=>{try{load(safeUrl($('url').value.trim()))}catch(e){status('請輸入完整的 HTTP / HTTPS M3U8 網址。')}};$('choose').onclick=()=>load($('quality').value);
+$('demo').onclick=()=>{if(busy)return;reset();isDemo=true;install({segments:Array.from({length:84},(_,i)=>({duration:6,start:i*6,seq:i,url:''})),live:false})};
+for(const [id,fn]of [['all',()=>selected=new Set(segments.map((_,i)=>i))],['none',()=>selected.clear()],['invert',()=>selected=new Set(segments.map((_,i)=>i).filter(i=>!selected.has(i)))]])$(id).onclick=()=>{fn();render()};
+function range(keep){const a=Number($('from').value),b=Number($('to').value);if(!Number.isInteger(a)||!Number.isInteger(b)||a<1||b<a||b>segments.length){status('請輸入有效片號：1 ～ '+segments.length);return}for(let i=a-1;i<b;i++)keep?selected.add(i):selected.delete(i);render()}
+$('keepRange').onclick=()=>range(true);$('dropRange').onclick=()=>range(false);$('onlyKept').onchange=()=>{if($('onlyKept').checked)$('onlyDropped').checked=false;page=0;render()};$('onlyDropped').onchange=()=>{if($('onlyDropped').checked)$('onlyKept').checked=false;page=0;render()};$('prev').onclick=()=>{page--;render()};$('next').onclick=()=>{page++;render()};$('thumbs').onclick=generateThumbnails;$('download').onclick=()=>download('ts');$('mp4').onclick=()=>download('mp4');$('cancel').onclick=()=>controller?.abort();$('playlist').onclick=exportSelection;$('close').onclick=()=>$('preview').close();$('preview').addEventListener('close',()=>{previewCleanup?.();previewCleanup=null});$('previewPrev').onclick=()=>preview(previewIndex-1);$('previewNext').onclick=()=>preview(previewIndex+1);$('previewToggle').onclick=()=>{selected.has(previewIndex)?selected.delete(previewIndex):selected.add(previewIndex);$('previewToggle').textContent=selected.has(previewIndex)?'取消保留此片段':'保留此片段';render()};window.addEventListener('beforeunload',e=>{if(busy){e.preventDefault();e.returnValue=''}});
+
+function selectionSnapshot(){
+ return {type:'my-video-selection',version:1,savedAt:new Date().toISOString(),sourceUrl:isDemo?'':source,filename:$('filename').value,isDemo,
+ selectedSegments:[...selected].sort((a,b)=>a-b).map(i=>i+1),segments:segments.map(s=>({...s})),view:{page,onlyKept:$('onlyKept').checked,onlyDropped:$('onlyDropped').checked}};
+}
+function validateSelection(data){
+ const fail=()=>{throw Error('清單格式不正確，請選擇本工具匯出的 JSON 名單')};
+ const num=n=>typeof n==='number'&&Number.isFinite(n);
+ const int=n=>Number.isSafeInteger(n)&&n>=0;
+ const url=u=>{if(typeof u!=='string')fail();return safeUrl(u)};
+ const byteRange=r=>{if(!r||!int(r.start)||!int(r.length)||r.length===0||!Number.isSafeInteger(r.start+r.length))fail();return {start:r.start,length:r.length}};
+ if(!data||data.type!=='my-video-selection'||data.version!==1||!Array.isArray(data.segments)||!data.segments.length||data.segments.length>100000||!Array.isArray(data.selectedSegments)||typeof data.isDemo!=='boolean'||typeof data.filename!=='string'||typeof data.sourceUrl!=='string')fail();
+ const demo=data.isDemo,sourceUrl=demo?'':url(data.sourceUrl);
+ const restored=data.segments.map(s=>{
+ if(!s||!num(s.duration)||s.duration<=0||!num(s.start)||s.start<0||!int(s.seq))fail();
+ let key=null,map=null;
+ if(s.key){if(s.key.METHOD!=='AES-128'||(s.key.KEYFORMAT&&s.key.KEYFORMAT!=='identity')||(s.key.IV&&!/^0x[0-9a-f]{1,32}$/i.test(s.key.IV)))fail();key={METHOD:'AES-128',URI:url(s.key.URI)};if(s.key.IV)key.IV=s.key.IV}
+ if(s.map){map={URI:url(s.map.URI)};if(s.map.BYTERANGE){if(typeof s.map.BYTERANGE!=='string'||!/^\d+(?:@\d+)?$/.test(s.map.BYTERANGE))fail();map.BYTERANGE=s.map.BYTERANGE}}
+ return {url:demo?'':url(s.url),duration:s.duration,start:s.start,seq:s.seq,key,map,range:s.range?byteRange(s.range):null,disc:!!s.disc};
+ });
+ if(data.selectedSegments.some(n=>!Number.isInteger(n)||n<1||n>restored.length)||new Set(data.selectedSegments).size!==data.selectedSegments.length)fail();
+ return {segments:restored,selected:new Set(data.selectedSegments.map(n=>n-1)),source:sourceUrl,isDemo:demo,filename:data.filename.slice(0,240),page:int(data.view?.page)?data.view.page:0,onlyKept:data.view?.onlyKept===true,onlyDropped:data.view?.onlyKept!==true&&data.view?.onlyDropped===true};
+}
+function exportSelection(){
+ if(busy||!segments.length)return;
+ save(new Blob([JSON.stringify(selectionSnapshot(),null,2)],{type:'application/json'}),filename()+'-選取名單.json');
+ status('已匯出選取名單：保留 '+selected.size+' / '+segments.length+' 段。重新開啟工具後，可用「匯入清單」還原；此檔案不含影片，來源網址仍需有效。');
+}
+async function importSelection(file){
+ if(!file||busy)return;
+ try{
+ if(file.size>20*1024*1024)throw Error('清單超過 20 MB，無法匯入');
+ const restored=validateSelection(JSON.parse((await file.text()).replace(/^\uFEFF/,'')));
+ if(busy)return;
+ reset();segments=restored.segments;selected=restored.selected;source=restored.source;isDemo=restored.isDemo;page=restored.page;
+ $('url').value=source;$('filename').value=restored.filename;$('onlyKept').checked=restored.onlyKept;$('onlyDropped').checked=restored.onlyDropped;$('from').value=1;$('to').value=segments.length;$('from').max=$('to').max=segments.length;
+ $('editor').hidden=false;$('footer').hidden=false;render();
+ status('已還原選取名單：保留 '+selected.size+' / '+segments.length+' 段，排除 '+(segments.length-selected.size)+' 段。可繼續挑選或匯出影片。'+(isDemo?' 這是示範名單，無法下載影片。':' 縮圖會重新產生；若來源過期，預覽與下載仍會失敗。'));
+ }catch(e){status('匯入失敗：'+e.message+'。原本的選取未變更。')}
+ finally{$('importFile').value=''}
+}
+$('importList').onclick=()=>{if(!busy)$('importFile').click()};
+$('importFile').onchange=e=>importSelection(e.target.files[0]);
+
+</script></html>
